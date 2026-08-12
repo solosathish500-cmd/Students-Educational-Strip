@@ -32,171 +32,15 @@ function Booking() {
   };
 
   // =====================================================
-  // NORMALIZE COLLEGE NAME
+  // NORMALIZE TEXT
   // =====================================================
 
-  const normalizeCollegeName = (text) => {
+  const normalizeText = (text) => {
     return text
       .toLowerCase()
       .trim()
-      .replace(/\s+/g, " ")
-      .replace(/[.,]/g, "");
+      .replace(/\s+/g, " ");
   };
-
-  // =====================================================
-  // NORMALIZE DEPARTMENT
-  // =====================================================
-
-  const normalizeDepartment = (text) => {
-    return text
-      .toLowerCase()
-      .trim()
-      .replace(/\s+/g, "")
-      .replace(/_/g, "-");
-  };
-
-  // =====================================================
-  // CHECK SPECIAL COLLEGE
-  // =====================================================
-
-  const isSpecialCollege = () => {
-    const college = normalizeCollegeName(
-      formData.college_name
-    );
-
-    console.log("Entered College:", college);
-
-    // Short names
-    if (
-      college === "svpp" ||
-      college === "svpcet"
-    ) {
-      return true;
-    }
-
-    // Full college names
-    if (
-      college.includes(
-        "sri venkatesa perumal college"
-      )
-    ) {
-      return true;
-    }
-
-    // Common spelling mistakes
-    if (
-      college.includes(
-        "sei venkatesa perumal college"
-      )
-    ) {
-      return true;
-    }
-
-    if (
-      college.includes(
-        "sri venkatesa perumal colege"
-      )
-    ) {
-      return true;
-    }
-
-    if (
-      college.includes(
-        "sei venkatesa perumal colege"
-      )
-    ) {
-      return true;
-    }
-
-    if (
-      college.includes(
-        "sri venkatesa perumal collage"
-      )
-    ) {
-      return true;
-    }
-
-    if (
-      college.includes(
-        "sei venkatesa perumal collage"
-      )
-    ) {
-      return true;
-    }
-
-    return false;
-  };
-
-  // =====================================================
-  // GET DISCOUNT
-  // =====================================================
-
-  const getDiscountPercent = () => {
-    const specialCollege = isSpecialCollege();
-
-    const department = normalizeDepartment(
-      formData.department
-    );
-
-    console.log("Special College:", specialCollege);
-    console.log("Department:", department);
-
-    // -----------------------------------------------
-    // CSE-AIML = 10%
-    // -----------------------------------------------
-
-    if (
-      specialCollege &&
-      (
-        department === "cse-aiml" ||
-        department === "cseaiml" ||
-        department === "aiml"
-      )
-    ) {
-      return 10;
-    }
-
-    // -----------------------------------------------
-    // CSE-AI = 5%
-    // -----------------------------------------------
-
-    if (
-      specialCollege &&
-      (
-        department === "cse-ai" ||
-        department === "cseai"
-      )
-    ) {
-      return 5;
-    }
-
-    return 0;
-  };
-
-  // =====================================================
-  // CURRENT DISCOUNT
-  // =====================================================
-
-  const currentDiscount = getDiscountPercent();
-
-  // =====================================================
-  // PRICE PREVIEW
-  // =====================================================
-
-  const selectedPrice =
-    tripPrices[formData.trip_destination] || 0;
-
-  const selectedStudents =
-    Number(formData.number_of_students) || 0;
-
-  const previewOriginalPrice =
-    selectedPrice * selectedStudents;
-
-  const previewDiscountAmount =
-    (previewOriginalPrice * currentDiscount) / 100;
-
-  const previewFinalPrice =
-    previewOriginalPrice - previewDiscountAmount;
 
   // =====================================================
   // HANDLE INPUT
@@ -212,6 +56,86 @@ function Booking() {
   };
 
   // =====================================================
+  // CHECK SPECIAL COLLEGE
+  // =====================================================
+
+  const isSpecialCollege = () => {
+    const college = normalizeText(formData.college_name);
+
+    const specialCollegeNames = [
+      "svpp",
+      "svpcet",
+      "svpcet college",
+      "sri venkatesa perumal college",
+      "sei venkatesa perumal college",
+      "sri venkatesa perumal colege",
+      "sei venkatesa perumal colege",
+      "sri venkatesa perumal collage",
+      "sei venkatesa perumal collage",
+    ];
+
+    return specialCollegeNames.includes(college);
+  };
+
+  // =====================================================
+  // GET DISCOUNT
+  // =====================================================
+
+  const getDiscountPercent = () => {
+    if (!isSpecialCollege()) {
+      return 0;
+    }
+
+    const department = normalizeText(formData.department);
+
+    // CSE-AIML = 10%
+    if (
+      department === "cse-aiml" ||
+      department === "cse aiml" ||
+      department === "cse-ai&ml" ||
+      department === "cse ai&ml" ||
+      department === "aiml"
+    ) {
+      return 10;
+    }
+
+    // CSE-AI = 5%
+    if (
+      department === "cse-ai" ||
+      department === "cse ai"
+    ) {
+      return 5;
+    }
+
+    return 0;
+  };
+
+  // =====================================================
+  // CURRENT DISCOUNT
+  // =====================================================
+
+  const currentDiscount = getDiscountPercent();
+
+  // =====================================================
+  // PRICE CALCULATIONS
+  // =====================================================
+
+  const selectedPrice =
+    tripPrices[formData.trip_destination] || 0;
+
+  const selectedStudents =
+    Number(formData.number_of_students) || 0;
+
+  const originalPrice =
+    selectedPrice * selectedStudents;
+
+  const discountAmount =
+    (originalPrice * currentDiscount) / 100;
+
+  const finalPrice =
+    originalPrice - discountAmount;
+
+  // =====================================================
   // SUBMIT BOOKING
   // =====================================================
 
@@ -221,83 +145,41 @@ function Booking() {
     setMessage("Processing booking...");
     setMessageType("info");
 
-    // -----------------------------------------------
-    // PRICE CALCULATION
-    // -----------------------------------------------
-
     const pricePerStudent =
       tripPrices[formData.trip_destination] || 0;
 
     const studentCount =
       Number(formData.number_of_students) || 1;
 
-    const originalPrice =
+    const bookingOriginalPrice =
       pricePerStudent * studentCount;
 
     const discountPercent =
       getDiscountPercent();
 
-    const discountAmount =
-      (originalPrice * discountPercent) / 100;
+    const bookingDiscountAmount =
+      (bookingOriginalPrice * discountPercent) / 100;
 
-    const finalPrice =
-      originalPrice - discountAmount;
-
-    // -----------------------------------------------
-    // BOOKING DATA
-    // -----------------------------------------------
+    const bookingFinalPrice =
+      bookingOriginalPrice - bookingDiscountAmount;
 
     const bookingData = {
       ...formData,
 
       number_of_students: studentCount,
 
-      original_price: originalPrice,
+      original_price: bookingOriginalPrice,
 
       discount_percent: discountPercent,
 
-      discount_amount: discountAmount,
+      discount_amount: bookingDiscountAmount,
 
-      final_price: finalPrice,
+      final_price: bookingFinalPrice,
 
       payment_status: "Pending",
     };
 
-    console.log(
-      "================================="
-    );
-    console.log("BOOKING DATA");
-    console.log(
-      "College:",
-      formData.college_name
-    );
-    console.log(
-      "Department:",
-      formData.department
-    );
-    console.log(
-      "Discount:",
-      discountPercent + "%"
-    );
-    console.log(
-      "Original Price:",
-      originalPrice
-    );
-    console.log(
-      "Discount Amount:",
-      discountAmount
-    );
-    console.log(
-      "Final Price:",
-      finalPrice
-    );
-    console.log(
-      "================================="
-    );
-
-    // -----------------------------------------------
-    // SEND TO BACKEND
-    // -----------------------------------------------
+    console.log("Booking Data:", bookingData);
 
     try {
       const response = await fetch(
@@ -343,12 +225,8 @@ function Booking() {
         setMessageType("danger");
       }
     } catch (error) {
-      console.error(
-        "Booking error:",
-        error
-      );
+      console.error("Booking error:", error);
 
-      // Save locally
       localStorage.setItem(
         "latestBooking",
         JSON.stringify(bookingData)
@@ -372,93 +250,309 @@ function Booking() {
 
   return (
     <div
-      className="container-fluid bg-light py-5"
-      style={{ minHeight: "90vh" }}
+      style={{
+        minHeight: "100vh",
+        background:
+          "linear-gradient(-45deg, #16002e, #2d0757, #4b1680, #210044)",
+        backgroundSize: "400% 400%",
+        animation: "gradientMove 12s ease infinite",
+        padding: "50px 20px",
+        overflow: "hidden",
+      }}
     >
 
-      {/* HEADER */}
+      {/* =================================================
+          ANIMATION CSS
+      ================================================= */}
 
-      <div className="text-center mb-4">
+      <style>
+        {`
+          @keyframes gradientMove {
+            0% {
+              background-position: 0% 50%;
+            }
 
-        <h2 className="text-success fw-bold">
+            50% {
+              background-position: 100% 50%;
+            }
+
+            100% {
+              background-position: 0% 50%;
+            }
+          }
+
+          @keyframes fadeDown {
+            0% {
+              opacity: 0;
+              transform: translateY(-40px);
+            }
+
+            100% {
+              opacity: 1;
+              transform: translateY(0);
+            }
+          }
+
+          @keyframes cardEntrance {
+            0% {
+              opacity: 0;
+              transform: translateY(60px) scale(0.95);
+            }
+
+            100% {
+              opacity: 1;
+              transform: translateY(0) scale(1);
+            }
+          }
+
+          @keyframes fadeUp {
+            0% {
+              opacity: 0;
+              transform: translateY(25px);
+            }
+
+            100% {
+              opacity: 1;
+              transform: translateY(0);
+            }
+          }
+
+          @keyframes discountPulse {
+            0% {
+              transform: scale(1);
+              box-shadow: 0 0 0 rgba(52, 211, 153, 0);
+            }
+
+            50% {
+              transform: scale(1.02);
+              box-shadow: 0 8px 25px rgba(52, 211, 153, 0.25);
+            }
+
+            100% {
+              transform: scale(1);
+              box-shadow: 0 0 0 rgba(52, 211, 153, 0);
+            }
+          }
+
+          @keyframes buttonGlow {
+            0% {
+              box-shadow: 0 8px 20px rgba(75, 22, 128, 0.35);
+            }
+
+            50% {
+              box-shadow:
+                0 8px 30px rgba(123, 44, 191, 0.65),
+                0 0 15px rgba(168, 85, 247, 0.35);
+            }
+
+            100% {
+              box-shadow: 0 8px 20px rgba(75, 22, 128, 0.35);
+            }
+          }
+
+          @keyframes priceAppear {
+            0% {
+              opacity: 0;
+              transform: scale(0.95);
+            }
+
+            100% {
+              opacity: 1;
+              transform: scale(1);
+            }
+          }
+
+          .booking-header {
+            animation: fadeDown 1s ease forwards;
+          }
+
+          .booking-card {
+            animation: cardEntrance 1s ease forwards;
+          }
+
+          .booking-field {
+            animation: fadeUp 0.7s ease forwards;
+          }
+
+          .discount-box {
+            animation: discountPulse 2s ease-in-out infinite;
+          }
+
+          .price-summary {
+            animation: priceAppear 0.5s ease forwards;
+          }
+
+          .payment-button {
+            animation: buttonGlow 2.5s ease-in-out infinite;
+            transition:
+              transform 0.3s ease,
+              box-shadow 0.3s ease;
+          }
+
+          .payment-button:hover {
+            transform: translateY(-4px) scale(1.01);
+            box-shadow:
+              0 12px 35px rgba(123, 44, 191, 0.65);
+          }
+
+          .booking-input {
+            transition:
+              border 0.3s ease,
+              box-shadow 0.3s ease,
+              transform 0.2s ease;
+          }
+
+          .booking-input:focus {
+            border-color: #7b2cbf !important;
+            box-shadow:
+              0 0 0 4px rgba(123, 44, 191, 0.15) !important;
+            transform: translateY(-1px);
+          }
+
+          .booking-card {
+            transition: transform 0.3s ease;
+          }
+
+          .booking-card:hover {
+            transform: translateY(-3px);
+          }
+        `}
+      </style>
+
+      {/* =================================================
+          HEADER
+      ================================================= */}
+
+      <div className="text-center mb-5 booking-header">
+
+        <h1
+          style={{
+            color: "#ffffff",
+            fontWeight: "800",
+            fontSize: "42px",
+            letterSpacing: "1px",
+            marginBottom: "10px",
+            textShadow:
+              "0 4px 15px rgba(0,0,0,0.4)",
+          }}
+        >
           Trip Booking
-        </h2>
+        </h1>
 
-        <p className="text-muted">
-          Fill in the details to book your student trip
+        <p
+          style={{
+            color: "#ddd0f5",
+            fontSize: "18px",
+          }}
+        >
+          Plan your educational trip with us
         </p>
 
       </div>
 
-      {/* BOOKING CARD */}
+      {/* =================================================
+          MAIN CARD
+      ================================================= */}
 
       <div
-        className="card shadow mx-auto p-4"
-        style={{ maxWidth: "900px" }}
+        className="mx-auto booking-card"
+        style={{
+          maxWidth: "950px",
+          background: "rgba(255,255,255,0.97)",
+          borderRadius: "25px",
+          padding: "35px",
+          boxShadow:
+            "0 25px 70px rgba(0,0,0,0.45)",
+        }}
       >
 
         <form onSubmit={handleSubmit}>
 
           {/* STUDENT NAME */}
 
-          <div className="mb-3">
+          <div className="mb-4 booking-field">
 
-            <label className="form-label fw-bold">
+            <label
+              className="form-label fw-bold"
+              style={{ color: "#321052" }}
+            >
               Student Name
             </label>
 
             <input
               type="text"
               name="full_name"
-              className="form-control"
+              className="form-control form-control-lg booking-input"
               placeholder="Enter your name"
               value={formData.full_name}
               onChange={handleChange}
               required
+              style={{
+                borderRadius: "12px",
+                border: "1px solid #c9b5df",
+              }}
             />
 
           </div>
 
-          {/* COLLEGE NAME */}
+          {/* COLLEGE */}
 
-          <div className="mb-3">
+          <div className="mb-4 booking-field">
 
-            <label className="form-label fw-bold">
+            <label
+              className="form-label fw-bold"
+              style={{ color: "#321052" }}
+            >
               College Name
             </label>
 
             <input
               type="text"
               name="college_name"
-              className="form-control"
+              className="form-control form-control-lg booking-input"
               placeholder="Enter your college"
               value={formData.college_name}
               onChange={handleChange}
               required
+              style={{
+                borderRadius: "12px",
+                border: "1px solid #c9b5df",
+              }}
             />
 
-            <small className="text-muted">
+            <small
+              style={{
+                color: "#76548f",
+              }}
+            >
               Special discount available for
-              SVPP, SVPCET or Sri Venkatesa Perumal
-              College.
+              SVPP, SVPCET or Sri Venkatesa
+              Perumal College.
             </small>
 
           </div>
 
           {/* DEPARTMENT */}
 
-          <div className="mb-3">
+          <div className="mb-4 booking-field">
 
-            <label className="form-label fw-bold">
+            <label
+              className="form-label fw-bold"
+              style={{ color: "#321052" }}
+            >
               Department
             </label>
 
             <select
               name="department"
-              className="form-select"
+              className="form-select form-select-lg booking-input"
               value={formData.department}
               onChange={handleChange}
               required
+              style={{
+                borderRadius: "12px",
+                border: "1px solid #c9b5df",
+              }}
             >
 
               <option value="">
@@ -513,125 +607,170 @@ function Booking() {
 
           </div>
 
-          {/* DISCOUNT MESSAGE */}
+          {/* =================================================
+              DISCOUNT MESSAGE
+          ================================================= */}
 
           {formData.college_name.trim() !== "" &&
             formData.department !== "" && (
 
-              <div className="mb-3">
+              <div className="mb-4">
 
                 {currentDiscount === 10 && (
+                  <div
+                    className="discount-box"
+                    style={{
+                      background:
+                        "linear-gradient(135deg,#d1fae5,#a7f3d0)",
+                      border:
+                        "1px solid #34d399",
+                      borderRadius: "15px",
+                      padding: "18px",
+                      color: "#065f46",
+                    }}
+                  >
 
-                  <div className="alert alert-success">
-
-                    🎉{" "}
-
-                    <strong>
-                      10% Discount Applied!
+                    <strong
+                      style={{
+                        fontSize: "18px",
+                      }}
+                    >
+                      🎉 10% Discount Applied!
                     </strong>
 
                     <br />
 
-                    SVPP / SVPCET /
+                    CSE-AIML students from
                     Sri Venkatesa Perumal College
-                    CSE-AIML students receive
-                    a 10% discount.
+                    receive a 10% discount.
 
                   </div>
-
                 )}
 
                 {currentDiscount === 5 && (
+                  <div
+                    className="discount-box"
+                    style={{
+                      background:
+                        "linear-gradient(135deg,#d1fae5,#a7f3d0)",
+                      border:
+                        "1px solid #34d399",
+                      borderRadius: "15px",
+                      padding: "18px",
+                      color: "#065f46",
+                    }}
+                  >
 
-                  <div className="alert alert-success">
-
-                    🎉{" "}
-
-                    <strong>
-                      5% Discount Applied!
+                    <strong
+                      style={{
+                        fontSize: "18px",
+                      }}
+                    >
+                      🎉 5% Discount Applied!
                     </strong>
 
                     <br />
 
-                    SVPP / SVPCET /
+                    CSE-AI students from
                     Sri Venkatesa Perumal College
-                    CSE-AI students receive
-                    a 5% discount.
+                    receive a 5% discount.
 
                   </div>
-
                 )}
 
                 {currentDiscount === 0 && (
-
-                  <div className="alert alert-secondary">
-
+                  <div
+                    style={{
+                      background: "#f1f1f1",
+                      borderRadius: "15px",
+                      padding: "15px",
+                      color: "#555",
+                    }}
+                  >
                     No special discount is applicable
                     for the selected college and
                     department.
-
                   </div>
-
                 )}
 
               </div>
-
             )}
 
           {/* EMAIL */}
 
-          <div className="mb-3">
+          <div className="mb-4 booking-field">
 
-            <label className="form-label fw-bold">
+            <label
+              className="form-label fw-bold"
+              style={{ color: "#321052" }}
+            >
               Email
             </label>
 
             <input
               type="email"
               name="email"
-              className="form-control"
+              className="form-control form-control-lg booking-input"
               placeholder="Enter your email"
               value={formData.email}
               onChange={handleChange}
               required
+              style={{
+                borderRadius: "12px",
+                border: "1px solid #c9b5df",
+              }}
             />
 
           </div>
 
           {/* PHONE */}
 
-          <div className="mb-3">
+          <div className="mb-4 booking-field">
 
-            <label className="form-label fw-bold">
+            <label
+              className="form-label fw-bold"
+              style={{ color: "#321052" }}
+            >
               Phone Number
             </label>
 
             <input
               type="tel"
               name="phone"
-              className="form-control"
+              className="form-control form-control-lg booking-input"
               placeholder="Enter your phone number"
               value={formData.phone}
               onChange={handleChange}
               required
+              style={{
+                borderRadius: "12px",
+                border: "1px solid #c9b5df",
+              }}
             />
 
           </div>
 
           {/* DESTINATION */}
 
-          <div className="mb-3">
+          <div className="mb-4 booking-field">
 
-            <label className="form-label fw-bold">
+            <label
+              className="form-label fw-bold"
+              style={{ color: "#321052" }}
+            >
               Destination
             </label>
 
             <select
               name="trip_destination"
-              className="form-select"
+              className="form-select form-select-lg booking-input"
               value={formData.trip_destination}
               onChange={handleChange}
               required
+              style={{
+                borderRadius: "12px",
+                border: "1px solid #c9b5df",
+              }}
             >
 
               <option value="">
@@ -668,16 +807,19 @@ function Booking() {
 
           {/* TRAVEL DATE */}
 
-          <div className="mb-3">
+          <div className="mb-4 booking-field">
 
-            <label className="form-label fw-bold">
+            <label
+              className="form-label fw-bold"
+              style={{ color: "#321052" }}
+            >
               Travel Date
             </label>
 
             <input
               type="date"
               name="travel_date"
-              className="form-control"
+              className="form-control form-control-lg booking-input"
               value={formData.travel_date}
               onChange={handleChange}
               min={
@@ -686,46 +828,78 @@ function Booking() {
                   .split("T")[0]
               }
               required
+              style={{
+                borderRadius: "12px",
+                border: "1px solid #c9b5df",
+              }}
             />
 
           </div>
 
           {/* NUMBER OF STUDENTS */}
 
-          <div className="mb-3">
+          <div className="mb-4 booking-field">
 
-            <label className="form-label fw-bold">
+            <label
+              className="form-label fw-bold"
+              style={{ color: "#321052" }}
+            >
               Number of Students
             </label>
 
             <input
               type="number"
               name="number_of_students"
-              className="form-control"
+              className="form-control form-control-lg booking-input"
               placeholder="Enter number of students"
               min="1"
               value={formData.number_of_students}
               onChange={handleChange}
               required
+              style={{
+                borderRadius: "12px",
+                border: "1px solid #c9b5df",
+              }}
             />
 
           </div>
 
-          {/* PRICE SUMMARY */}
+          {/* =================================================
+              PRICE SUMMARY
+          ================================================= */}
 
           {formData.trip_destination &&
             formData.number_of_students && (
 
-              <div className="card bg-light border p-3 mb-3">
+              <div
+                className="price-summary"
+                style={{
+                  background:
+                    "linear-gradient(135deg,#f5edff,#eee2ff)",
+                  border:
+                    "1px solid #c8a8e9",
+                  borderRadius: "20px",
+                  padding: "25px",
+                  marginBottom: "25px",
+                }}
+              >
 
-                <h5 className="fw-bold">
+                <h4
+                  style={{
+                    color: "#4b1680",
+                    fontWeight: "800",
+                  }}
+                >
                   Booking Summary
-                </h5>
+                </h4>
 
                 <hr />
 
-                <p className="mb-2">
-                  Price per student:{" "}
+                <div className="d-flex justify-content-between mb-2">
+
+                  <span>
+                    Price per student
+                  </span>
 
                   <strong>
                     ₹
@@ -734,78 +908,128 @@ function Booking() {
                     )}
                   </strong>
 
-                </p>
+                </div>
 
-                <p className="mb-2">
-                  Number of students:{" "}
+                <div className="d-flex justify-content-between mb-2">
+
+                  <span>
+                    Number of students
+                  </span>
 
                   <strong>
                     {selectedStudents}
                   </strong>
 
-                </p>
+                </div>
 
-                <p className="mb-2">
-                  Original Price:{" "}
+                <div className="d-flex justify-content-between mb-2">
+
+                  <span>
+                    Original Price
+                  </span>
 
                   <strong>
                     ₹
-                    {previewOriginalPrice.toLocaleString(
+                    {originalPrice.toLocaleString(
                       "en-IN"
                     )}
                   </strong>
 
-                </p>
+                </div>
 
                 {currentDiscount > 0 && (
 
-                  <p className="mb-2 text-success">
+                  <div
+                    className="d-flex justify-content-between mb-2"
+                    style={{
+                      color: "#198754",
+                    }}
+                  >
 
-                    Discount ({currentDiscount}%):{" "}
+                    <span>
+                      Discount ({currentDiscount}%)
+                    </span>
 
                     <strong>
                       - ₹
-                      {previewDiscountAmount.toLocaleString(
+                      {discountAmount.toLocaleString(
                         "en-IN"
                       )}
                     </strong>
 
-                  </p>
+                  </div>
 
                 )}
 
                 <hr />
 
-                <h4 className="text-success fw-bold">
+                <div
+                  className="d-flex justify-content-between align-items-center"
+                >
 
-                  Final Price: ₹
-                  {previewFinalPrice.toLocaleString(
-                    "en-IN"
-                  )}
+                  <span
+                    style={{
+                      fontSize: "22px",
+                      fontWeight: "800",
+                      color: "#321052",
+                    }}
+                  >
+                    Final Price
+                  </span>
 
-                </h4>
+                  <span
+                    style={{
+                      fontSize: "28px",
+                      fontWeight: "900",
+                      color: "#6a1b9a",
+                    }}
+                  >
+                    ₹
+                    {finalPrice.toLocaleString(
+                      "en-IN"
+                    )}
+                  </span>
+
+                </div>
 
               </div>
-
             )}
 
-          {/* SUBMIT */}
+          {/* =================================================
+              SUBMIT BUTTON
+          ================================================= */}
 
           <button
             type="submit"
-            className="btn btn-success w-100"
+            className="btn w-100 payment-button"
+            style={{
+              background:
+                "linear-gradient(135deg,#4b1680,#7b2cbf)",
+              color: "white",
+              border: "none",
+              borderRadius: "14px",
+              padding: "15px",
+              fontSize: "18px",
+              fontWeight: "700",
+            }}
           >
-            Continue to Payment
+            Continue to Payment →
           </button>
 
         </form>
 
-        {/* MESSAGE */}
+        {/* =================================================
+            MESSAGE
+        ================================================= */}
 
         {message && (
 
           <div
-            className={`alert alert-${messageType} mt-3 text-center`}
+            className={`alert alert-${messageType} mt-4 text-center`}
+            style={{
+              borderRadius: "12px",
+              animation: "fadeUp 0.5s ease",
+            }}
           >
             {message}
           </div>

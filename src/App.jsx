@@ -27,58 +27,27 @@ function AppContent() {
 
       {/* Pages */}
       <Routes>
+        <Route path="/" element={<Home />} />
 
-        {/* Home */}
-        <Route
-          path="/"
-          element={<Home />}
-        />
+        <Route path="/login" element={<Login />} />
 
-        {/* Login */}
-        <Route
-          path="/login"
-          element={<Login />}
-        />
+        <Route path="/register" element={<Register />} />
 
-        {/* Register */}
-        <Route
-          path="/register"
-          element={<Register />}
-        />
+        <Route path="/booking" element={<Booking />} />
 
-        {/* Booking */}
-        <Route
-          path="/booking"
-          element={<Booking />}
-        />
+        <Route path="/payment" element={<Payment />} />
 
-        {/* Payment */}
-        <Route
-          path="/payment"
-          element={<Payment />}
-        />
-
-        {/* Booking Confirmation */}
         <Route
           path="/booking-confirmation"
           element={<BookingConfirmation />}
         />
 
-        {/* Trip Explorer */}
-        <Route
-          path="/trip-explorer"
-          element={<TripExplorer />}
-        />
+        <Route path="/trip-explorer" element={<TripExplorer />} />
 
-        {/* Contact */}
-        <Route
-          path="/contact"
-          element={<Contact />}
-        />
-
+        <Route path="/contact" element={<Contact />} />
       </Routes>
 
-      {/* Footer ONLY on Home page */}
+      {/* Footer only on Home page */}
       {location.pathname === "/" && <Footer />}
     </>
   );
@@ -86,7 +55,7 @@ function AppContent() {
 
 function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename="/Students-Educational-Strip">
       <AppContent />
     </BrowserRouter>
   );

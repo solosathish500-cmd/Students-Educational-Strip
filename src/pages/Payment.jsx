@@ -4,9 +4,9 @@ import { useNavigate } from "react-router-dom";
 function Payment() {
   const navigate = useNavigate();
 
-  const [booking, setBooking] = useState(() => {
-    const savedBooking =
-      localStorage.getItem("latestBooking");
+  // Get booking data directly from localStorage
+  const [booking] = useState(() => {
+    const savedBooking = localStorage.getItem("latestBooking");
 
     if (!savedBooking) {
       return null;
@@ -15,543 +15,944 @@ function Payment() {
     try {
       return JSON.parse(savedBooking);
     } catch (error) {
-      console.error(
-        "Invalid booking data:",
-        error
-      );
-
+      console.error("Invalid booking data:", error);
       return null;
     }
   });
 
-  const [paymentMethod, setPaymentMethod] =
-    useState("");
+  const [selectedMethod, setSelectedMethod] = useState("");
+  const [processing, setProcessing] = useState(false);
 
-  const [upiId, setUpiId] =
-    useState("");
-
-  const [cardNumber, setCardNumber] =
-    useState("");
-
-  const [cardName, setCardName] =
-    useState("");
-
-  const [expiry, setExpiry] =
-    useState("");
-
-  const [cvv, setCvv] =
-    useState("");
-
-  const [message, setMessage] =
-    useState("");
-
-  const [processing, setProcessing] =
-    useState(false);
-
-  // =====================================================
+  // --------------------------------------------------
   // NO BOOKING
-  // =====================================================
+  // --------------------------------------------------
 
   if (!booking) {
     return (
-      <div className="container mt-5 mb-5">
-        <div className="card shadow p-5 text-center">
+      <div style={styles.page}>
+        <div className="travel-stars"></div>
 
-          <h2 className="text-danger">
+        <div className="cloud cloud1">☁️</div>
+        <div className="cloud cloud2">☁️</div>
+
+        <div className="plane plane1">✈️</div>
+
+        <div style={styles.noBookingCard}>
+          <div style={styles.bigIcon}>🧳</div>
+
+          <h2 style={{ color: "#fff", fontWeight: "800" }}>
             No Booking Found
           </h2>
 
-          <p className="text-muted mt-3">
-            Please complete a booking before making
-            a payment.
+          <p style={{ color: "#d8d8f5" }}>
+            Please complete a trip booking before making a payment.
           </p>
 
           <button
-            className="btn btn-success mt-3"
             onClick={() => navigate("/booking")}
+            style={styles.primaryButton}
           >
             Go to Booking
           </button>
-
         </div>
       </div>
     );
   }
 
+  // --------------------------------------------------
+  // PRICE
+  // --------------------------------------------------
+
+  const originalPrice = Number(booking.original_price) || 0;
+
+  const discountAmount = Number(booking.discount_amount) || 0;
+
   const finalPrice =
-    Number(booking.final_price) || 0;
+    Number(booking.final_price) ||
+    originalPrice - discountAmount;
 
-  // =====================================================
+  const discountPercent =
+    Number(booking.discount_percent) || 0;
+
+  // --------------------------------------------------
   // PAYMENT
-  // =====================================================
+  // --------------------------------------------------
 
-  const handlePayment = (e) => {
-    e.preventDefault();
-
-    setMessage("");
-
-    // Check payment method
-    if (!paymentMethod) {
-      setMessage(
-        "Please select a payment method."
-      );
-
+  const handlePayment = () => {
+    if (!selectedMethod) {
+      alert("Please select a payment method.");
       return;
     }
 
-    // UPI validation
-    if (paymentMethod === "UPI") {
-      if (!upiId.trim()) {
-        setMessage(
-          "Please enter your UPI ID."
-        );
-
-        return;
-      }
-    }
-
-    // Card validation
-    if (paymentMethod === "Card") {
-      if (
-        !cardNumber.trim() ||
-        !cardName.trim() ||
-        !expiry.trim() ||
-        !cvv.trim()
-      ) {
-        setMessage(
-          "Please fill all card details."
-        );
-
-        return;
-      }
-
-      if (cardNumber.length < 12) {
-        setMessage(
-          "Please enter a valid card number."
-        );
-
-        return;
-      }
-
-      if (cvv.length < 3) {
-        setMessage(
-          "Please enter a valid CVV."
-        );
-
-        return;
-      }
-    }
-
-    // =================================================
-    // PROCESS PAYMENT
-    // =================================================
-
     setProcessing(true);
-    setMessage(
-      "Processing payment..."
+
+    const updatedBooking = {
+      ...booking,
+      payment_method: selectedMethod,
+      payment_status:
+        selectedMethod === "Pay Later"
+          ? "Pay Later"
+          : "Paid",
+    };
+
+    localStorage.setItem(
+      "latestBooking",
+      JSON.stringify(updatedBooking)
     );
 
     setTimeout(() => {
-
-      const updatedBooking = {
-        ...booking,
-
-        payment_status:
-          paymentMethod === "Cash"
-            ? "Pay Later"
-            : "Paid",
-
-        payment_method:
-          paymentMethod,
-
-        payment_id:
-          "PAY" +
-          Date.now(),
-
-      };
-
-      // Save updated booking
-      localStorage.setItem(
-        "latestBooking",
-        JSON.stringify(updatedBooking)
-      );
-
-      setBooking(updatedBooking);
-
-      setProcessing(false);
-
-      // Go confirmation
-      navigate(
-        "/booking-confirmation"
-      );
-
-    }, 1500);
+      navigate("/booking-confirmation");
+    }, 1800);
   };
 
   return (
-    <div
-      className="container-fluid bg-light py-5"
-      style={{ minHeight: "90vh" }}
-    >
+    <div style={styles.page}>
 
-      <div className="container">
+      {/* ============================================
+          ANIMATED BACKGROUND
+      ============================================ */}
 
-        {/* ================= HEADER ================= */}
+      <div className="travel-background">
 
-        <div className="text-center mb-4">
+        {/* Stars */}
+        <div className="stars"></div>
 
-          <h2 className="text-success fw-bold">
-            Payment
-          </h2>
+        {/* Moon */}
+        <div className="moon">🌙</div>
 
-          <p className="text-muted">
-            Complete your payment to confirm
-            your trip booking.
+        {/* Clouds */}
+        <div className="cloud cloud1">☁️</div>
+        <div className="cloud cloud2">☁️</div>
+        <div className="cloud cloud3">☁️</div>
+
+        {/* Airplanes */}
+        <div className="plane plane1">✈️</div>
+        <div className="plane plane2">✈️</div>
+
+        {/* Decorative luggage */}
+        <div className="travel-icon suitcase">🧳</div>
+        <div className="travel-icon globe">🌎</div>
+
+      </div>
+
+      {/* ============================================
+          MAIN CONTENT
+      ============================================ */}
+
+      <div style={styles.content}>
+
+        {/* HEADER */}
+
+        <div style={styles.header}>
+
+          <div style={styles.paymentIcon}>
+            💳
+          </div>
+
+          <h1 style={styles.title}>
+            Secure Payment
+          </h1>
+
+          <p style={styles.subtitle}>
+            Complete your payment and get ready for your journey
           </p>
 
         </div>
 
-        {/* ================= PAYMENT CARD ================= */}
+        {/* ==========================================
+            PAYMENT CARD
+        ========================================== */}
 
-        <div
-          className="card shadow mx-auto p-4"
-          style={{ maxWidth: "800px" }}
-        >
+        <div style={styles.card}>
 
-          {/* ================= BOOKING SUMMARY ================= */}
+          {/* Booking Summary */}
 
-          <div className="card bg-light p-3 mb-4">
+          <div style={styles.summaryCard}>
 
-            <h5 className="fw-bold">
-              Booking Summary
-            </h5>
+            <div style={styles.sectionTitle}>
+              🧳 Booking Summary
+            </div>
 
-            <hr />
+            <div style={styles.line}></div>
 
-            <p>
-              <strong>Student:</strong>{" "}
-              {booking.full_name}
-            </p>
+            <div style={styles.infoRow}>
+              <span>Student</span>
+              <strong>
+                {booking.full_name || "N/A"}
+              </strong>
+            </div>
 
-            <p>
-              <strong>College:</strong>{" "}
-              {booking.college_name}
-            </p>
+            <div style={styles.infoRow}>
+              <span>College</span>
+              <strong>
+                {booking.college_name || "N/A"}
+              </strong>
+            </div>
 
-            <p>
-              <strong>Department:</strong>{" "}
-              {booking.department}
-            </p>
+            <div style={styles.infoRow}>
+              <span>Department</span>
+              <strong>
+                {booking.department || "N/A"}
+              </strong>
+            </div>
 
-            <p>
-              <strong>Destination:</strong>{" "}
-              {booking.trip_destination}
-            </p>
+            <div style={styles.infoRow}>
+              <span>Destination</span>
 
-            <p>
-              <strong>Number of Students:</strong>{" "}
-              {booking.number_of_students}
-            </p>
+              <strong style={styles.destination}>
+                📍 {booking.trip_destination || "N/A"}
+              </strong>
+            </div>
 
-            <hr />
+            <div style={styles.infoRow}>
+              <span>Travel Date</span>
 
-            <p>
-              Original Price:{" "}
+              <strong>
+                {booking.travel_date || "N/A"}
+              </strong>
+            </div>
+
+            <div style={styles.infoRow}>
+              <span>Students</span>
+
+              <strong>
+                {booking.number_of_students || 0}
+              </strong>
+            </div>
+
+            <div style={styles.line}></div>
+
+            {/* Price */}
+
+            <div style={styles.priceRow}>
+              <span>Original Price</span>
+
               <strong>
                 ₹
-                {Number(
-                  booking.original_price || 0
-                ).toLocaleString("en-IN")}
+                {originalPrice.toLocaleString("en-IN")}
               </strong>
-            </p>
+            </div>
 
-            <p className="text-success">
-              Discount:{" "}
-              <strong>
-                {booking.discount_percent || 0}%
-              </strong>
-            </p>
+            {discountPercent > 0 && (
+              <>
+                <div style={styles.discountRow}>
+                  <span>
+                    Discount ({discountPercent}%)
+                  </span>
 
-            <p className="text-success">
-              Discount Amount:{" "}
+                  <strong>
+                    - ₹
+                    {discountAmount.toLocaleString("en-IN")}
+                  </strong>
+                </div>
+              </>
+            )}
+
+            <div style={styles.line}></div>
+
+            <div style={styles.finalPriceRow}>
+
+              <span>
+                Amount to Pay
+              </span>
+
               <strong>
                 ₹
-                {Number(
-                  booking.discount_amount || 0
-                ).toLocaleString("en-IN")}
+                {finalPrice.toLocaleString("en-IN")}
               </strong>
-            </p>
 
-            <hr />
-
-            <h3 className="text-success fw-bold">
-              Amount to Pay: ₹
-              {finalPrice.toLocaleString("en-IN")}
-            </h3>
+            </div>
 
           </div>
 
-          {/* ================= PAYMENT METHODS ================= */}
+          {/* ========================================
+              PAYMENT METHODS
+          ======================================== */}
 
-          <h5 className="fw-bold mb-3">
+          <h3 style={styles.methodTitle}>
             Select Payment Method
-          </h5>
+          </h3>
 
-          <div className="row">
+          <div style={styles.methods}>
 
             {/* UPI */}
 
-            <div className="col-md-4 mb-3">
+            <button
+              type="button"
+              onClick={() => setSelectedMethod("UPI")}
+              style={{
+                ...styles.methodButton,
+                ...(selectedMethod === "UPI"
+                  ? styles.selectedMethod
+                  : {}),
+              }}
+            >
+              <div style={styles.methodIcon}>
+                📱
+              </div>
 
-              <button
-                type="button"
-                className={`btn w-100 p-3 ${
-                  paymentMethod === "UPI"
-                    ? "btn-success"
-                    : "btn-outline-success"
-                }`}
-                onClick={() =>
-                  setPaymentMethod("UPI")
-                }
-              >
-                💳
-                <br />
-                UPI
-              </button>
+              <strong>UPI</strong>
 
-            </div>
+              <small>
+                Google Pay / PhonePe
+              </small>
+            </button>
 
             {/* CARD */}
 
-            <div className="col-md-4 mb-3">
-
-              <button
-                type="button"
-                className={`btn w-100 p-3 ${
-                  paymentMethod === "Card"
-                    ? "btn-success"
-                    : "btn-outline-success"
-                }`}
-                onClick={() =>
-                  setPaymentMethod("Card")
-                }
-              >
+            <button
+              type="button"
+              onClick={() => setSelectedMethod("Card")}
+              style={{
+                ...styles.methodButton,
+                ...(selectedMethod === "Card"
+                  ? styles.selectedMethod
+                  : {}),
+              }}
+            >
+              <div style={styles.methodIcon}>
                 💳
-                <br />
-                Card
-              </button>
-
-            </div>
-
-            {/* CASH */}
-
-            <div className="col-md-4 mb-3">
-
-              <button
-                type="button"
-                className={`btn w-100 p-3 ${
-                  paymentMethod === "Cash"
-                    ? "btn-success"
-                    : "btn-outline-success"
-                }`}
-                onClick={() =>
-                  setPaymentMethod("Cash")
-                }
-              >
-                💵
-                <br />
-                Pay Later
-              </button>
-
-            </div>
-
-          </div>
-
-          {/* ================= UPI ================= */}
-
-          {paymentMethod === "UPI" && (
-
-            <div className="card p-3 mt-3">
-
-              <h5 className="text-success">
-                UPI Payment
-              </h5>
-
-              <p className="text-muted">
-                Enter your UPI ID.
-              </p>
-
-              <input
-                type="text"
-                className="form-control"
-                placeholder="example@upi"
-                value={upiId}
-                onChange={(e) =>
-                  setUpiId(e.target.value)
-                }
-              />
-
-            </div>
-
-          )}
-
-          {/* ================= CARD ================= */}
-
-          {paymentMethod === "Card" && (
-
-            <div className="card p-3 mt-3">
-
-              <h5 className="text-success">
-                Card Payment
-              </h5>
-
-              <div className="mb-3">
-
-                <label className="form-label">
-                  Card Number
-                </label>
-
-                <input
-                  type="text"
-                  className="form-control"
-                  placeholder="1234567890123456"
-                  maxLength="16"
-                  value={cardNumber}
-                  onChange={(e) =>
-                    setCardNumber(
-                      e.target.value.replace(
-                        /\D/g,
-                        ""
-                      )
-                    )
-                  }
-                />
-
               </div>
 
-              <div className="mb-3">
+              <strong>Card</strong>
 
-                <label className="form-label">
-                  Card Holder Name
-                </label>
+              <small>
+                Debit / Credit Card
+              </small>
+            </button>
 
-                <input
-                  type="text"
-                  className="form-control"
-                  placeholder="Enter card holder name"
-                  value={cardName}
-                  onChange={(e) =>
-                    setCardName(e.target.value)
-                  }
-                />
-
-              </div>
-
-              <div className="row">
-
-                <div className="col-md-6 mb-3">
-
-                  <label className="form-label">
-                    Expiry
-                  </label>
-
-                  <input
-                    type="text"
-                    className="form-control"
-                    placeholder="MM/YY"
-                    value={expiry}
-                    onChange={(e) =>
-                      setExpiry(e.target.value)
-                    }
-                  />
-
-                </div>
-
-                <div className="col-md-6 mb-3">
-
-                  <label className="form-label">
-                    CVV
-                  </label>
-
-                  <input
-                    type="password"
-                    className="form-control"
-                    placeholder="CVV"
-                    maxLength="4"
-                    value={cvv}
-                    onChange={(e) =>
-                      setCvv(
-                        e.target.value.replace(
-                          /\D/g,
-                          ""
-                        )
-                      )
-                    }
-                  />
-
-                </div>
-
-              </div>
-
-            </div>
-
-          )}
-
-          {/* ================= CASH ================= */}
-
-          {paymentMethod === "Cash" && (
-
-            <div className="alert alert-info mt-3">
-
-              <h5>
-                Pay Later
-              </h5>
-
-              <p className="mb-0">
-                You can pay the amount later
-                according to the trip payment
-                instructions.
-              </p>
-
-            </div>
-
-          )}
-
-          {/* ================= ERROR ================= */}
-
-          {message && (
-
-            <div className="alert alert-danger mt-3">
-              {message}
-            </div>
-
-          )}
-
-          {/* ================= PAY BUTTON ================= */}
-
-          {paymentMethod && (
+            {/* PAY LATER */}
 
             <button
               type="button"
-              className="btn btn-success w-100 mt-4"
-              onClick={handlePayment}
-              disabled={processing}
+              onClick={() => setSelectedMethod("Pay Later")}
+              style={{
+                ...styles.methodButton,
+                ...(selectedMethod === "Pay Later"
+                  ? styles.selectedMethod
+                  : {}),
+              }}
             >
-              {processing
-                ? "Processing..."
-                : paymentMethod === "Cash"
-                ? "Confirm Pay Later"
-                : `Pay ₹${finalPrice.toLocaleString(
-                    "en-IN"
-                  )}`}
+              <div style={styles.methodIcon}>
+                🕒
+              </div>
+
+              <strong>Pay Later</strong>
+
+              <small>
+                Pay before trip
+              </small>
             </button>
 
+          </div>
+
+          {/* Selected payment */}
+
+          {selectedMethod && (
+            <div style={styles.selectedMessage}>
+
+              ✓ {selectedMethod} selected
+
+            </div>
           )}
 
+          {/* ========================================
+              PAY BUTTON
+          ======================================== */}
+
+          <button
+            type="button"
+            onClick={handlePayment}
+            disabled={processing}
+            style={{
+              ...styles.payButton,
+              opacity: processing ? 0.7 : 1,
+            }}
+          >
+            {processing
+              ? "Processing Payment..."
+              : `Pay ₹${finalPrice.toLocaleString("en-IN")} →`}
+          </button>
+
+          <p style={styles.securityText}>
+            🔒 Your payment information is secure
+          </p>
+
         </div>
+
+        {/* Footer text */}
+
+        <div style={styles.bottomText}>
+          ✈️ Your journey starts here
+        </div>
+
       </div>
+
+      {/* ============================================
+          ANIMATION CSS
+      ============================================ */}
+
+      <style>
+        {`
+          * {
+            box-sizing: border-box;
+          }
+
+          body {
+            margin: 0;
+            padding: 0;
+          }
+
+          .travel-background {
+            position: fixed;
+            inset: 0;
+            overflow: hidden;
+            pointer-events: none;
+            z-index: 0;
+          }
+
+          .stars {
+            position: absolute;
+            inset: 0;
+
+            background-image:
+              radial-gradient(
+                2px 2px at 20% 30%,
+                white,
+                transparent
+              ),
+              radial-gradient(
+                2px 2px at 70% 20%,
+                white,
+                transparent
+              ),
+              radial-gradient(
+                1px 1px at 40% 70%,
+                white,
+                transparent
+              ),
+              radial-gradient(
+                2px 2px at 85% 60%,
+                white,
+                transparent
+              ),
+              radial-gradient(
+                1px 1px at 15% 80%,
+                white,
+                transparent
+              );
+
+            background-size: 350px 350px;
+
+            animation: starsMove 15s linear infinite;
+            opacity: 0.6;
+          }
+
+          @keyframes starsMove {
+            from {
+              transform: translateY(0);
+            }
+
+            to {
+              transform: translateY(-350px);
+            }
+          }
+
+          .moon {
+            position: absolute;
+            top: 8%;
+            right: 10%;
+
+            font-size: 65px;
+
+            animation:
+              moonFloat 4s ease-in-out infinite;
+          }
+
+          @keyframes moonFloat {
+            0%,
+            100% {
+              transform: translateY(0);
+            }
+
+            50% {
+              transform: translateY(-15px);
+            }
+          }
+
+          .cloud {
+            position: absolute;
+            font-size: 65px;
+            opacity: 0.25;
+          }
+
+          .cloud1 {
+            top: 18%;
+            left: -120px;
+            animation: cloudMove 35s linear infinite;
+          }
+
+          .cloud2 {
+            top: 45%;
+            left: -180px;
+            font-size: 50px;
+            animation: cloudMove 45s linear infinite;
+          }
+
+          .cloud3 {
+            top: 72%;
+            left: -150px;
+            font-size: 75px;
+            animation: cloudMove 55s linear infinite;
+          }
+
+          @keyframes cloudMove {
+            from {
+              transform: translateX(0);
+            }
+
+            to {
+              transform: translateX(
+                calc(100vw + 300px)
+              );
+            }
+          }
+
+          .plane {
+            position: absolute;
+            font-size: 38px;
+          }
+
+          .plane1 {
+            top: 25%;
+            left: -100px;
+
+            animation:
+              planeMove 18s linear infinite;
+          }
+
+          .plane2 {
+            top: 65%;
+            left: -150px;
+            font-size: 28px;
+
+            animation:
+              planeMove 25s linear infinite;
+            animation-delay: 7s;
+          }
+
+          @keyframes planeMove {
+            0% {
+              transform:
+                translateX(0)
+                translateY(0)
+                rotate(-8deg);
+            }
+
+            50% {
+              transform:
+                translateX(50vw)
+                translateY(-40px)
+                rotate(-3deg);
+            }
+
+            100% {
+              transform:
+                translateX(
+                  calc(100vw + 300px)
+                )
+                translateY(-100px)
+                rotate(-8deg);
+            }
+          }
+
+          .travel-icon {
+            position: absolute;
+            font-size: 55px;
+            opacity: 0.18;
+
+            animation:
+              iconFloat 5s ease-in-out infinite;
+          }
+
+          .suitcase {
+            bottom: 10%;
+            left: 7%;
+          }
+
+          .globe {
+            bottom: 12%;
+            right: 7%;
+            animation-delay: 2s;
+          }
+
+          @keyframes iconFloat {
+            0%,
+            100% {
+              transform: translateY(0) rotate(0deg);
+            }
+
+            50% {
+              transform:
+                translateY(-20px)
+                rotate(5deg);
+            }
+          }
+
+          .method-button:hover {
+            transform: translateY(-6px);
+          }
+
+          @media (max-width: 768px) {
+
+            .payment-card {
+              width: 95%;
+            }
+
+            .methods {
+              grid-template-columns: 1fr;
+            }
+
+            .title {
+              font-size: 32px;
+            }
+          }
+        `}
+      </style>
     </div>
   );
 }
+
+const styles = {
+  page: {
+    minHeight: "100vh",
+    width: "100%",
+    position: "relative",
+    overflow: "hidden",
+
+    background:
+      "linear-gradient(135deg, #08001a 0%, #17004a 40%, #32006b 70%, #09001c 100%)",
+
+    padding: "50px 20px",
+  },
+
+  content: {
+    position: "relative",
+    zIndex: 5,
+    maxWidth: "950px",
+    margin: "0 auto",
+  },
+
+  header: {
+    textAlign: "center",
+    marginBottom: "30px",
+  },
+
+  paymentIcon: {
+    width: "70px",
+    height: "70px",
+    margin: "0 auto 15px",
+
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+
+    borderRadius: "50%",
+
+    background:
+      "linear-gradient(135deg,#8b5cf6,#ec4899)",
+
+    fontSize: "32px",
+
+    boxShadow:
+      "0 15px 40px rgba(139,92,246,0.4)",
+  },
+
+  title: {
+    color: "white",
+    fontSize: "42px",
+    fontWeight: "900",
+    margin: "0",
+    letterSpacing: "1px",
+  },
+
+  subtitle: {
+    color: "#d8d8f5",
+    fontSize: "16px",
+    marginTop: "8px",
+  },
+
+  card: {
+    width: "100%",
+
+    background:
+      "rgba(255,255,255,0.94)",
+
+    backdropFilter: "blur(20px)",
+
+    borderRadius: "28px",
+
+    padding: "30px",
+
+    boxShadow:
+      "0 30px 80px rgba(0,0,0,0.5)",
+
+    border:
+      "1px solid rgba(255,255,255,0.3)",
+  },
+
+  summaryCard: {
+    background:
+      "linear-gradient(135deg,#f7f0ff,#eee4ff)",
+
+    borderRadius: "20px",
+
+    padding: "25px",
+
+    border:
+      "1px solid #d8c4f2",
+  },
+
+  sectionTitle: {
+    fontSize: "22px",
+    fontWeight: "900",
+    color: "#38105d",
+  },
+
+  line: {
+    height: "1px",
+    background: "#d5c7e5",
+    margin: "16px 0",
+  },
+
+  infoRow: {
+    display: "flex",
+    justifyContent: "space-between",
+    gap: "20px",
+
+    padding: "7px 0",
+
+    color: "#555",
+  },
+
+  destination: {
+    color: "#6d28d9",
+  },
+
+  priceRow: {
+    display: "flex",
+    justifyContent: "space-between",
+
+    padding: "7px 0",
+
+    color: "#444",
+  },
+
+  discountRow: {
+    display: "flex",
+    justifyContent: "space-between",
+
+    padding: "7px 0",
+
+    color: "#059669",
+
+    fontWeight: "700",
+  },
+
+  finalPriceRow: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+
+    fontSize: "24px",
+    fontWeight: "900",
+
+    color: "#38105d",
+  },
+
+  methodTitle: {
+    marginTop: "30px",
+    marginBottom: "15px",
+
+    color: "#321052",
+
+    fontWeight: "800",
+  },
+
+  methods: {
+    display: "grid",
+
+    gridTemplateColumns:
+      "repeat(3, 1fr)",
+
+    gap: "15px",
+  },
+
+  methodButton: {
+    minHeight: "130px",
+
+    border:
+      "2px solid #d8c4f2",
+
+    borderRadius: "18px",
+
+    background: "white",
+
+    color: "#321052",
+
+    cursor: "pointer",
+
+    display: "flex",
+    flexDirection: "column",
+
+    alignItems: "center",
+    justifyContent: "center",
+
+    gap: "5px",
+
+    transition:
+      "all 0.3s ease",
+
+    boxShadow:
+      "0 5px 15px rgba(60,20,100,0.08)",
+  },
+
+  selectedMethod: {
+    border:
+      "2px solid #7c3aed",
+
+    background:
+      "linear-gradient(135deg,#f3e8ff,#ede9fe)",
+
+    transform:
+      "translateY(-5px)",
+
+    boxShadow:
+      "0 15px 30px rgba(124,58,237,0.25)",
+  },
+
+  methodIcon: {
+    fontSize: "32px",
+  },
+
+  selectedMessage: {
+    marginTop: "18px",
+
+    padding: "12px",
+
+    borderRadius: "12px",
+
+    textAlign: "center",
+
+    background: "#ecfdf5",
+
+    color: "#047857",
+
+    fontWeight: "700",
+  },
+
+  payButton: {
+    width: "100%",
+
+    marginTop: "25px",
+
+    padding: "17px",
+
+    border: "none",
+
+    borderRadius: "15px",
+
+    cursor: "pointer",
+
+    color: "white",
+
+    fontSize: "19px",
+
+    fontWeight: "800",
+
+    background:
+      "linear-gradient(135deg,#7c3aed,#db2777)",
+
+    boxShadow:
+      "0 12px 30px rgba(124,58,237,0.35)",
+
+    transition:
+      "all 0.3s ease",
+  },
+
+  securityText: {
+    textAlign: "center",
+
+    marginTop: "15px",
+
+    marginBottom: "0",
+
+    color: "#777",
+
+    fontSize: "13px",
+  },
+
+  bottomText: {
+    textAlign: "center",
+
+    marginTop: "25px",
+
+    color: "#d8d8f5",
+
+    fontSize: "15px",
+
+    fontWeight: "600",
+  },
+
+  noBookingCard: {
+    position: "relative",
+    zIndex: 5,
+
+    maxWidth: "500px",
+
+    margin: "15vh auto",
+
+    textAlign: "center",
+
+    padding: "45px 30px",
+
+    borderRadius: "25px",
+
+    background:
+      "rgba(255,255,255,0.12)",
+
+    backdropFilter: "blur(20px)",
+
+    border:
+      "1px solid rgba(255,255,255,0.2)",
+
+    boxShadow:
+      "0 25px 60px rgba(0,0,0,0.4)",
+  },
+
+  bigIcon: {
+    fontSize: "70px",
+    marginBottom: "15px",
+  },
+
+  primaryButton: {
+    marginTop: "20px",
+
+    padding: "13px 30px",
+
+    border: "none",
+
+    borderRadius: "12px",
+
+    color: "white",
+
+    background:
+      "linear-gradient(135deg,#7c3aed,#db2777)",
+
+    fontWeight: "700",
+
+    cursor: "pointer",
+  },
+};
 
 export default Payment;
