@@ -14,7 +14,7 @@ app.use(express.json());
 
 
 // =====================================================
-// MYSQL CONNECTION
+// MYSQL CONNECTION (UPDATED FOR AIVEN CLOUD)
 // =====================================================
 
 const db = mysql.createConnection({
@@ -23,6 +23,9 @@ const db = mysql.createConnection({
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
   port: process.env.DB_PORT,
+  ssl: {
+    rejectUnauthorized: false // Required for Aiven cloud database
+  }
 });
 
 
@@ -34,7 +37,7 @@ db.connect((error) => {
   if (error) {
     console.error("MySQL connection failed:", error.message);
   } else {
-    console.log("MySQL Connected Successfully!");
+    console.log("MySQL Connected Successfully to Aiven Cloud!");
   }
 });
 
@@ -88,14 +91,13 @@ app.post("/api/register", (req, res) => {
       });
     }
 
-    // Insert student
+    // Insert student (Fixed the ? placeholders to match the 6 columns)
     const insertSql = `
       INSERT INTO users
       (full_name, email, phone, college_name, department, password)
-      VALUES (?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?)
     `;
 
-    // Note: ensure this values array matches the insert columns above
     db.query(
       insertSql,
       [full_name, email, phone, college_name, department, password],
