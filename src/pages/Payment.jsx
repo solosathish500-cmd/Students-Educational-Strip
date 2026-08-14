@@ -64,21 +64,44 @@ function Payment() {
   // --------------------------------------------------
 
   const originalPrice = Number(booking.original_price) || 0;
-
   const discountAmount = Number(booking.discount_amount) || 0;
-
-  const finalPrice =
-    Number(booking.final_price) ||
-    originalPrice - discountAmount;
-
-  const discountPercent =
-    Number(booking.discount_percent) || 0;
+  const finalPrice = Number(booking.final_price) || originalPrice - discountAmount;
+  const discountPercent = Number(booking.discount_percent) || 0;
 
   // --------------------------------------------------
-  // PAYMENT
+  // UPDATE DATABASE STATUS FUNCTION (NEW)
   // --------------------------------------------------
 
-  const handlePayment = () => {
+  const updatePaymentStatus = async (status) => {
+    try {
+      if (!booking || !booking.bookingId) {
+        console.error("No booking ID found to update.");
+        return;
+      }
+
+      const response = await fetch(`http://localhost:5000/api/bookings/${booking.bookingId}/status`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ payment_status: status }),
+      });
+
+      if (!response.ok) {
+        console.error("Failed to update status in database");
+      } else {
+        console.log(`Successfully updated database status to: ${status}`);
+      }
+    } catch (error) {
+      console.error("Error updating payment status:", error);
+    }
+  };
+
+  // --------------------------------------------------
+  // PAYMENT HANDLERS (UPDATED)
+  // --------------------------------------------------
+
+  const handlePayment = async () => {
     if (!selectedMethod) {
       alert("Please select a payment method.");
       return;
@@ -86,23 +109,51 @@ function Payment() {
 
     setProcessing(true);
 
+    // If they choose Pay Later, we keep it Pending in the DB. Otherwise, it is Paid.
+    const dbStatus = selectedMethod === "Pay Later" ? "Pending" : "Paid";
+
+    // 1. Update the backend database
+    await updatePaymentStatus(dbStatus);
+
+    // 2. Update local storage with the new data
     const updatedBooking = {
       ...booking,
       payment_method: selectedMethod,
-      payment_status:
-        selectedMethod === "Pay Later"
-          ? "Pay Later"
-          : "Paid",
+      payment_status: dbStatus,
     };
 
-    localStorage.setItem(
-      "latestBooking",
-      JSON.stringify(updatedBooking)
-    );
+    localStorage.setItem("latestBooking", JSON.stringify(updatedBooking));
 
+    // 3. Show success alert and navigate
+    alert("Payment Processed Successfully!");
+    
     setTimeout(() => {
       navigate("/booking-confirmation");
-    }, 1800);
+    }, 500);
+  };
+
+  const handleCancel = async () => {
+    const confirmCancel = window.confirm("Are you sure you want to cancel this booking?");
+    if (!confirmCancel) return;
+
+    setProcessing(true);
+
+    // 1. Tell backend to mark as Canceled
+    await updatePaymentStatus("Canceled");
+
+    // 2. Update local storage
+    const updatedBooking = {
+      ...booking,
+      payment_status: "Canceled",
+    };
+    localStorage.setItem("latestBooking", JSON.stringify(updatedBooking));
+
+    alert("Booking Canceled.");
+
+    // Redirect user back to the home or booking page after canceling
+    setTimeout(() => {
+      navigate("/booking");
+    }, 500);
   };
 
   return (
@@ -357,7 +408,7 @@ function Payment() {
           )}
 
           {/* ========================================
-              PAY BUTTON
+              PAY & CANCEL BUTTONS
           ======================================== */}
 
           <button
@@ -372,6 +423,18 @@ function Payment() {
             {processing
               ? "Processing Payment..."
               : `Pay ₹${finalPrice.toLocaleString("en-IN")} →`}
+          </button>
+
+          <button
+            type="button"
+            onClick={handleCancel}
+            disabled={processing}
+            style={{
+              ...styles.cancelButton,
+              opacity: processing ? 0.7 : 1,
+            }}
+          >
+            Cancel Booking
           </button>
 
           <p style={styles.securityText}>
@@ -875,6 +938,34 @@ const styles = {
 
     boxShadow:
       "0 12px 30px rgba(124,58,237,0.35)",
+
+    transition:
+      "all 0.3s ease",
+  },
+
+  cancelButton: {
+    width: "100%",
+
+    marginTop: "15px",
+
+    padding: "15px",
+
+    border: "none",
+
+    borderRadius: "15px",
+
+    cursor: "pointer",
+
+    color: "white",
+
+    fontSize: "17px",
+
+    fontWeight: "700",
+
+    background: "#ef4444", // A nice red for the cancel button
+
+    boxShadow:
+      "0 10px 20px rgba(239, 68, 68, 0.25)",
 
     transition:
       "all 0.3s ease",

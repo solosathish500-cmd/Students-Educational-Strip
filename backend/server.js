@@ -32,10 +32,7 @@ const db = mysql.createConnection({
 
 db.connect((error) => {
   if (error) {
-    console.error(
-      "MySQL connection failed:",
-      error.message
-    );
+    console.error("MySQL connection failed:", error.message);
   } else {
     console.log("MySQL Connected Successfully!");
   }
@@ -56,7 +53,6 @@ app.get("/", (req, res) => {
 // =====================================================
 
 app.post("/api/register", (req, res) => {
-
   const {
     full_name,
     email,
@@ -66,127 +62,73 @@ app.post("/api/register", (req, res) => {
     password,
   } = req.body;
 
-
   // Check required fields
-  if (
-    !full_name ||
-    !email ||
-    !phone ||
-    !college_name ||
-    !department ||
-    !password
-  ) {
+  if (!full_name || !email || !phone || !college_name || !department || !password) {
     return res.status(400).json({
       message: "All fields are required",
     });
   }
 
-
   // Check whether email already exists
-  const checkSql = `
-    SELECT id
-    FROM users
-    WHERE email = ?
-  `;
+  const checkSql = `SELECT id FROM users WHERE email = ?`;
 
-
-  db.query(
-    checkSql,
-    [email],
-    (error, results) => {
-
-      if (error) {
-
-        console.error(
-          "Email check failed:",
-          error.message
-        );
-
-        return res.status(500).json({
-          message: "Database error",
-          error: error.message,
-        });
-      }
-
-
-      // Email already registered
-      if (results.length > 0) {
-
-        return res.status(409).json({
-          message: "Email already registered",
-        });
-      }
-
-
-      // Insert student
-      const insertSql = `
-        INSERT INTO users
-        (
-          full_name,
-          email,
-          phone,
-          college_name,
-          department,
-          password
-        )
-        VALUES (?, ?, ?, ?, ?, ?)
-      `;
-
-
-      db.query(
-        insertSql,
-        [
-          full_name,
-          email,
-          phone,
-          college_name,
-          department,
-          password,
-        ],
-        (insertError, result) => {
-
-          if (insertError) {
-
-            console.error(
-              "Registration failed:",
-              insertError.message
-            );
-
-            return res.status(500).json({
-              message: "Registration failed",
-              error: insertError.message,
-            });
-          }
-
-
-          console.log(
-            "New student registered:",
-            full_name
-          );
-
-
-          return res.status(201).json({
-            message: "Registration successful",
-            userId: result.insertId,
-          });
-
-        }
-      );
-
+  db.query(checkSql, [email], (error, results) => {
+    if (error) {
+      console.error("Email check failed:", error.message);
+      return res.status(500).json({
+        message: "Database error",
+        error: error.message,
+      });
     }
-  );
+
+    // Email already registered
+    if (results.length > 0) {
+      return res.status(409).json({
+        message: "Email already registered",
+      });
+    }
+
+    // Insert student
+    const insertSql = `
+      INSERT INTO users
+      (full_name, email, phone, college_name, department, password)
+      VALUES (?, ?, ?, ?)
+    `;
+
+    // Note: ensure this values array matches the insert columns above
+    db.query(
+      insertSql,
+      [full_name, email, phone, college_name, department, password],
+      (insertError, result) => {
+        if (insertError) {
+          console.error("Registration failed:", insertError.message);
+          return res.status(500).json({
+            message: "Registration failed",
+            error: insertError.message,
+          });
+        }
+
+        console.log("New student registered:", full_name);
+
+        return res.status(201).json({
+          message: "Registration successful",
+          userId: result.insertId,
+        });
+      }
+    );
+  });
 });
 
 
 // =====================================================
-// BOOKING API
+// BOOKING API 
 // =====================================================
 
 app.post("/api/bookings", (req, res) => {
-
   const {
     full_name,
     college_name,
+    department,        
     email,
     phone,
     trip_destination,
@@ -195,29 +137,28 @@ app.post("/api/bookings", (req, res) => {
     payment_status,
   } = req.body;
 
-
   // Check required fields
   if (
     !full_name ||
     !college_name ||
+    !department ||      
     !email ||
     !phone ||
     !trip_destination ||
     !travel_date ||
     !number_of_students
   ) {
-
     return res.status(400).json({
       message: "All booking fields are required",
     });
   }
 
-
   const sql = `
-    INSERT INTO students
+    INSERT INTO students 
     (
       full_name,
       college_name,
+      department,       
       email,
       phone,
       trip_destination,
@@ -225,15 +166,15 @@ app.post("/api/bookings", (req, res) => {
       number_of_students,
       payment_status
     )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
-
 
   db.query(
     sql,
     [
       full_name,
       college_name,
+      department,       
       email,
       phone,
       trip_destination,
@@ -242,34 +183,55 @@ app.post("/api/bookings", (req, res) => {
       payment_status || "Pending",
     ],
     (error, result) => {
-
       if (error) {
-
-        console.error(
-          "Booking failed:",
-          error.message
-        );
-
+        console.error("Booking MySQL Error:", error.message);
         return res.status(500).json({
           message: "Booking failed",
-          error: error.message,
+          error: error.message, 
         });
       }
 
-
-      console.log(
-        "New booking created:",
-        result.insertId
-      );
-
+      console.log("New booking created:", result.insertId);
 
       return res.status(201).json({
         message: "Booking successful",
-        bookingId: result.insertId,
+        bookingId: result.insertId, // We send this ID back to the frontend!
       });
-
     }
   );
+});
+
+
+// =====================================================
+// UPDATE PAYMENT STATUS API (NEW)
+// =====================================================
+
+app.put("/api/bookings/:id/status", (req, res) => {
+  const bookingId = req.params.id;
+  const { payment_status } = req.body;
+
+  // Ensure the frontend sent a status
+  if (!payment_status) {
+    return res.status(400).json({ message: "Payment status is required" });
+  }
+
+  // Update the specific record in the database
+  const sql = `UPDATE students SET payment_status = ? WHERE id = ?`;
+
+  db.query(sql, [payment_status, bookingId], (error, result) => {
+    if (error) {
+      console.error("Failed to update status:", error.message);
+      return res.status(500).json({ message: "Database error", error: error.message });
+    }
+
+    // Check if the booking ID actually exists in the table
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: "Booking not found" });
+    }
+
+    console.log(`Booking ID ${bookingId} marked as: ${payment_status}`);
+    return res.status(200).json({ message: "Status updated successfully" });
+  });
 });
 
 
@@ -280,9 +242,5 @@ app.post("/api/bookings", (req, res) => {
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
-
-  console.log(
-    `Server running on http://localhost:${PORT}`
-  );
-
+  console.log(`Server running on http://localhost:${PORT}`);
 });
